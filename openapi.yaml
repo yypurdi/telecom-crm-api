@@ -1,0 +1,2791 @@
+openapi: 3.0.0
+info:
+  title: Telecom CRM API
+  description: |
+    Comprehensive REST API for Telecom CRM Platform
+    - Customer Management
+    - Product Catalog Management
+    - Promotional & Campaign Management
+    - Loyalty & Rewards Program
+    - AI Analytics & Insights
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@telecom-crm.com
+  license:
+    name: Apache 2.0
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local Development Server
+  - url: https://api.telecom-crm.com/api/v1
+    description: Production Server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login endpoint
+
+  schemas:
+    # ─── AUTH SCHEMAS ───────────────────────────────────────
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: agent@telecom.com
+        password:
+          type: string
+          format: password
+          example: SecurePassword123
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        expiresIn:
+          type: integer
+          example: 3600
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    UserResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [ADMIN, AGENT, READONLY, API]
+        isActive:
+          type: boolean
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    # ─── CUSTOMER SCHEMAS ────────────────────────────────────
+    Customer:
+      type: object
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        customerCode:
+          type: string
+          example: CUST-001
+        customerType:
+          type: string
+          enum: [INDIVIDUAL, CORPORATE]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED, TERMINATED]
+        registrationChannel:
+          type: string
+          example: MOBILE_APP
+        nationalId:
+          type: string
+        taxNumber:
+          type: string
+        preferredLanguage:
+          type: string
+          example: id_ID
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CustomerProfile:
+      type: object
+      properties:
+        profileId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        gender:
+          type: string
+          enum: [M, F, OTHER]
+        birthDate:
+          type: string
+          format: date
+        email:
+          type: string
+          format: email
+        phoneNumber:
+          type: string
+        occupation:
+          type: string
+        maritalStatus:
+          type: string
+        incomeRange:
+          type: string
+        educationLevel:
+          type: string
+        profileScore:
+          type: number
+          format: float
+
+    CustomerAddress:
+      type: object
+      properties:
+        addressId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        addressType:
+          type: string
+          enum: [HOME, OFFICE, BILLING, SHIPPING]
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+          default: Indonesia
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        isPrimary:
+          type: boolean
+
+    Subscription:
+      type: object
+      properties:
+        subscriptionId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        subscriptionNumber:
+          type: string
+        subscriptionType:
+          type: string
+          enum: [PREPAID, POSTPAID, HYBRID]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED, TERMINATED]
+        activationDate:
+          type: string
+          format: date
+        terminationDate:
+          type: string
+          format: date
+        packageId:
+          type: string
+          format: uuid
+        contractStart:
+          type: string
+          format: date
+        contractEnd:
+          type: string
+          format: date
+        autoRenew:
+          type: boolean
+        metadata:
+          type: object
+
+    # ─── PRODUCT SCHEMAS ────────────────────────────────────
+    Product:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        productCode:
+          type: string
+          example: PROD-001
+        productName:
+          type: string
+        productType:
+          type: string
+          enum: [MOBILE, DATA, VOICE, SMS, VAS, DIGITAL, IOT]
+        category:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, RETIRED]
+        launchDate:
+          type: string
+          format: date-time
+        retirementDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Package:
+      type: object
+      properties:
+        packageId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        packageCode:
+          type: string
+        packageName:
+          type: string
+        packageType:
+          type: string
+          enum: [PREPAID, POSTPAID, FIXED, HYBRID]
+        validityDays:
+          type: integer
+        renewable:
+          type: boolean
+        autoRenew:
+          type: boolean
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+
+    Bundle:
+      type: object
+      properties:
+        bundleId:
+          type: string
+          format: uuid
+        bundleCode:
+          type: string
+        bundleName:
+          type: string
+        description:
+          type: string
+        bundleType:
+          type: string
+          enum: [DATA_VOICE, TRIPLE_PLAY, FAMILY, CONVERGENCE, CUSTOM]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        effectiveStart:
+          type: string
+          format: date-time
+        effectiveEnd:
+          type: string
+          format: date-time
+
+    Pricing:
+      type: object
+      properties:
+        pricingId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        currencyCode:
+          type: string
+          default: IDR
+        basePrice:
+          type: number
+          format: double
+        discountAmount:
+          type: number
+          format: double
+        taxAmount:
+          type: number
+          format: double
+        finalPrice:
+          type: number
+          format: double
+        pricingModel:
+          type: string
+          enum: [FIXED, USAGE_BASED, TIERED, SUBSCRIPTION]
+        effectiveStart:
+          type: string
+          format: date-time
+        effectiveEnd:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+
+    Quota:
+      type: object
+      properties:
+        quotaId:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        quotaType:
+          type: string
+          enum: [DATA, VOICE, SMS, CONTENT]
+        quotaValue:
+          type: number
+          format: double
+        unit:
+          type: string
+        rollover:
+          type: boolean
+        unlimited:
+          type: boolean
+        fairUsagePolicy:
+          type: boolean
+
+    # ─── PROMO & CAMPAIGN SCHEMAS ────────────────────────
+    Campaign:
+      type: object
+      properties:
+        campaignId:
+          type: string
+          format: uuid
+        campaignCode:
+          type: string
+        campaignName:
+          type: string
+        description:
+          type: string
+        campaignType:
+          type: string
+          enum: [Acquisition, Retention, Upsell, CrossSell, Loyalty, Seasonal]
+        objective:
+          type: string
+        budgetAmount:
+          type: number
+          format: double
+        currencyCode:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [Draft, Active, Suspended, Completed, Archived]
+        priorityLevel:
+          type: integer
+        ownerTeam:
+          type: string
+
+    Promo:
+      type: object
+      properties:
+        promoId:
+          type: string
+          format: uuid
+        campaignId:
+          type: string
+          format: uuid
+        promoCode:
+          type: string
+        promoName:
+          type: string
+        description:
+          type: string
+        promoType:
+          type: string
+          enum: [Discount, Cashback, BOGO, Bundle, FreeShipping, RewardPoints]
+        benefitType:
+          type: string
+        benefitValue:
+          type: number
+          format: double
+        maxDiscountAmount:
+          type: number
+          format: double
+        currencyCode:
+          type: string
+        stackingAllowed:
+          type: boolean
+        exclusiveFlag:
+          type: boolean
+        approvalRequired:
+          type: boolean
+        autoApply:
+          type: boolean
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [Draft, Active, Suspended, Completed, Archived]
+
+    Coupon:
+      type: object
+      properties:
+        couponId:
+          type: string
+          format: uuid
+        promoId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        couponCode:
+          type: string
+        issueDate:
+          type: string
+          format: date-time
+        expiryDate:
+          type: string
+          format: date-time
+        maxUsage:
+          type: integer
+        usedCount:
+          type: integer
+        status:
+          type: string
+          enum: [Active, Used, Expired, Revoked]
+        issuedChannel:
+          type: string
+
+    # ─── LOYALTY SCHEMAS ────────────────────────────────────
+    Member:
+      type: object
+      properties:
+        memberId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        memberCode:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        gender:
+          type: string
+        countryCode:
+          type: string
+        languageCode:
+          type: string
+        joinDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED, TERMINATED]
+        currentTierId:
+          type: string
+          format: uuid
+        totalPoints:
+          type: number
+          format: double
+        lifetimePoints:
+          type: number
+          format: double
+        availablePoints:
+          type: number
+          format: double
+        redeemedPoints:
+          type: number
+          format: double
+        referralCode:
+          type: string
+        lastActivityAt:
+          type: string
+          format: date-time
+
+    Tier:
+      type: object
+      properties:
+        tierId:
+          type: string
+          format: uuid
+        tierCode:
+          type: string
+        tierName:
+          type: string
+        description:
+          type: string
+        levelOrder:
+          type: integer
+        minimumPoints:
+          type: number
+          format: double
+        annualSpendingThreshold:
+          type: number
+          format: double
+        validityDays:
+          type: integer
+        upgradeRule:
+          type: object
+        downgradeRule:
+          type: object
+        benefitDefinition:
+          type: object
+        isActive:
+          type: boolean
+
+    Reward:
+      type: object
+      properties:
+        rewardId:
+          type: string
+          format: uuid
+        rewardCode:
+          type: string
+        rewardName:
+          type: string
+        rewardType:
+          type: string
+        description:
+          type: string
+        pointCost:
+          type: number
+          format: double
+        cashValue:
+          type: number
+          format: double
+        currency:
+          type: string
+        partnerId:
+          type: string
+          format: uuid
+        tierRequirement:
+          type: string
+          format: uuid
+        validityStart:
+          type: string
+          format: date-time
+        validityEnd:
+          type: string
+          format: date-time
+        redemptionLimit:
+          type: integer
+        perMemberLimit:
+          type: integer
+        rewardStatus:
+          type: string
+          enum: [ACTIVE, INACTIVE, RETIRED]
+
+    Redemption:
+      type: object
+      properties:
+        redemptionId:
+          type: string
+          format: uuid
+        memberId:
+          type: string
+          format: uuid
+        rewardId:
+          type: string
+          format: uuid
+        redemptionCode:
+          type: string
+        redeemedPoints:
+          type: number
+          format: double
+        quantity:
+          type: integer
+        redemptionChannel:
+          type: string
+        redemptionStatus:
+          type: string
+          enum: [PENDING, FULFILLED, CANCELLED, EXPIRED]
+        fulfilledAt:
+          type: string
+          format: date-time
+        cancelledAt:
+          type: string
+          format: date-time
+        deliveryAddress:
+          type: string
+        remarks:
+          type: string
+
+    PointLedger:
+      type: object
+      properties:
+        ledgerId:
+          type: string
+          format: uuid
+        memberId:
+          type: string
+          format: uuid
+        transactionType:
+          type: string
+          enum: [EARN, REDEEM, ADJUSTMENT, BONUS, EXPIRY, REVERSAL, TRANSFER]
+        transactionSource:
+          type: string
+        referenceType:
+          type: string
+        referenceId:
+          type: string
+          format: uuid
+        points:
+          type: number
+          format: double
+        balanceBefore:
+          type: number
+          format: double
+        balanceAfter:
+          type: number
+          format: double
+        expiryDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [POSTED, PENDING, REVERSED]
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    # ─── ANALYTICS SCHEMAS ────────────────────────────────
+    CustomerFeatures:
+      type: object
+      properties:
+        featureId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        snapshotDate:
+          type: string
+          format: date
+        age:
+          type: integer
+        gender:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+        maritalStatus:
+          type: string
+        occupation:
+          type: string
+        incomeLevel:
+          type: string
+        totalOrders30d:
+          type: integer
+        totalOrders90d:
+          type: integer
+        totalOrders365d:
+          type: integer
+        avgOrderValue:
+          type: number
+          format: double
+        totalSpent30d:
+          type: number
+          format: double
+        totalSpent90d:
+          type: number
+          format: double
+        totalSpent365d:
+          type: number
+          format: double
+        loyaltyPointsBalance:
+          type: integer
+        tierLevel:
+          type: string
+        rewardRedemptionCount:
+          type: integer
+        engagementScore:
+          type: number
+          format: double
+
+    ChurnFeatures:
+      type: object
+      properties:
+        churnFeatureId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        snapshotDate:
+          type: string
+          format: date
+        inactivityDays:
+          type: integer
+        purchaseGapDays:
+          type: integer
+        loginGapDays:
+          type: integer
+        supportTicketCount:
+          type: integer
+        complaintCount:
+          type: integer
+        spendingDropPct:
+          type: number
+          format: double
+        revenueTrendScore:
+          type: number
+          format: double
+        paymentFailureCount:
+          type: integer
+        tierDowngradeFlag:
+          type: boolean
+        churnProbability:
+          type: number
+          format: double
+        churnRiskLevel:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        modelName:
+          type: string
+        modelVersion:
+          type: string
+
+    FraudFeatures:
+      type: object
+      properties:
+        fraudFeatureId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        snapshotDate:
+          type: string
+          format: date
+        transactionAmount:
+          type: number
+          format: double
+        transactionFrequency1h:
+          type: integer
+        transactionFrequency24h:
+          type: integer
+        failedPaymentCount:
+          type: integer
+        deviceCount:
+          type: integer
+        ipAddressCount:
+          type: integer
+        geoDistanceKm:
+          type: number
+          format: double
+        unusualActivityScore:
+          type: number
+          format: double
+        velocityScore:
+          type: number
+          format: double
+        accountTakeoverScore:
+          type: number
+          format: double
+        promoAbuseScore:
+          type: number
+          format: double
+        fraudProbability:
+          type: number
+          format: double
+        fraudLabel:
+          type: boolean
+        fraudReason:
+          type: string
+
+    # ─── ERROR SCHEMAS ──────────────────────────────────────
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    ValidationError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [VALIDATION_ERROR]
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            pageSize:
+              type: integer
+            total:
+              type: integer
+            totalPages:
+              type: integer
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ─── AUTH ENDPOINTS ─────────────────────────────────────────
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User Login
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+      security: []
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh Access Token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security: []
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User Logout
+      operationId: logout
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          description: Unauthorized
+
+  # ─── CUSTOMER ENDPOINTS ────────────────────────────────────
+  /customers:
+    get:
+      tags:
+        - Customer Management
+      summary: List all customers
+      operationId: listCustomers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, SUSPENDED, TERMINATED]
+        - name: customerType
+          in: query
+          schema:
+            type: string
+            enum: [INDIVIDUAL, CORPORATE]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Customer'
+        '401':
+          description: Unauthorized
+
+    post:
+      tags:
+        - Customer Management
+      summary: Create a new customer
+      operationId: createCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerCode
+                - customerType
+              properties:
+                customerCode:
+                  type: string
+                customerType:
+                  type: string
+                  enum: [INDIVIDUAL, CORPORATE]
+                status:
+                  type: string
+                  enum: [ACTIVE, INACTIVE]
+                  default: ACTIVE
+                registrationChannel:
+                  type: string
+                nationalId:
+                  type: string
+                taxNumber:
+                  type: string
+                preferredLanguage:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '409':
+          description: Customer code already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /customers/{customerId}:
+    get:
+      tags:
+        - Customer Management
+      summary: Get customer details
+      operationId: getCustomer
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Customer details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Customer Management
+      summary: Update customer
+      operationId: updateCustomer
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customerType:
+                  type: string
+                  enum: [INDIVIDUAL, CORPORATE]
+                status:
+                  type: string
+                  enum: [ACTIVE, INACTIVE, SUSPENDED, TERMINATED]
+                registrationChannel:
+                  type: string
+                nationalId:
+                  type: string
+                taxNumber:
+                  type: string
+                preferredLanguage:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+        '404':
+          description: Customer not found
+        '400':
+          description: Validation error
+
+  /customers/{customerId}/profile:
+    get:
+      tags:
+        - Customer Management
+      summary: Get customer profile
+      operationId: getCustomerProfile
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Customer profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+        '404':
+          description: Customer or profile not found
+
+    post:
+      tags:
+        - Customer Management
+      summary: Create or update customer profile
+      operationId: upsertCustomerProfile
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                gender:
+                  type: string
+                  enum: [M, F, OTHER]
+                birthDate:
+                  type: string
+                  format: date
+                email:
+                  type: string
+                  format: email
+                phoneNumber:
+                  type: string
+                occupation:
+                  type: string
+                maritalStatus:
+                  type: string
+                incomeRange:
+                  type: string
+                educationLevel:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+        '201':
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+
+  /customers/{customerId}/addresses:
+    get:
+      tags:
+        - Customer Management
+      summary: Get customer addresses
+      operationId: getCustomerAddresses
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of customer addresses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CustomerAddress'
+
+    post:
+      tags:
+        - Customer Management
+      summary: Add customer address
+      operationId: addCustomerAddress
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - addressType
+                - addressLine1
+                - city
+                - province
+                - postalCode
+              properties:
+                addressType:
+                  type: string
+                  enum: [HOME, OFFICE, BILLING, SHIPPING]
+                addressLine1:
+                  type: string
+                addressLine2:
+                  type: string
+                city:
+                  type: string
+                province:
+                  type: string
+                postalCode:
+                  type: string
+                country:
+                  type: string
+                  default: Indonesia
+                latitude:
+                  type: number
+                  format: double
+                longitude:
+                  type: number
+                  format: double
+                isPrimary:
+                  type: boolean
+      responses:
+        '201':
+          description: Address added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddress'
+
+  /customers/{customerId}/subscriptions:
+    get:
+      tags:
+        - Customer Management
+      summary: Get customer subscriptions
+      operationId: getCustomerSubscriptions
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, SUSPENDED, TERMINATED]
+      responses:
+        '200':
+          description: List of subscriptions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Subscription'
+
+    post:
+      tags:
+        - Customer Management
+      summary: Create subscription for customer
+      operationId: createSubscription
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - subscriptionType
+                - packageId
+              properties:
+                subscriptionType:
+                  type: string
+                  enum: [PREPAID, POSTPAID, HYBRID]
+                packageId:
+                  type: string
+                  format: uuid
+                activationDate:
+                  type: string
+                  format: date
+                contractStart:
+                  type: string
+                  format: date
+                contractEnd:
+                  type: string
+                  format: date
+                autoRenew:
+                  type: boolean
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+  # ─── PRODUCT ENDPOINTS ────────────────────────────────────
+  /products:
+    get:
+      tags:
+        - Product Catalog
+      summary: List all products
+      operationId: listProducts
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: productType
+          in: query
+          schema:
+            type: string
+            enum: [MOBILE, DATA, VOICE, SMS, VAS, DIGITAL, IOT]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, RETIRED]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Product'
+
+    post:
+      tags:
+        - Product Catalog
+      summary: Create a new product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productCode
+                - productName
+                - productType
+              properties:
+                productCode:
+                  type: string
+                productName:
+                  type: string
+                productType:
+                  type: string
+                  enum: [MOBILE, DATA, VOICE, SMS, VAS, DIGITAL, IOT]
+                category:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum: [ACTIVE, INACTIVE]
+                  default: ACTIVE
+                launchDate:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+  /products/{productId}:
+    get:
+      tags:
+        - Product Catalog
+      summary: Get product details
+      operationId: getProduct
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+
+    put:
+      tags:
+        - Product Catalog
+      summary: Update product
+      operationId: updateProduct
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productName:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum: [ACTIVE, INACTIVE, RETIRED]
+                category:
+                  type: string
+      responses:
+        '200':
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+  /products/{productId}/pricing:
+    get:
+      tags:
+        - Product Catalog
+      summary: Get product pricing
+      operationId: getProductPricing
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product pricing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pricing'
+
+    post:
+      tags:
+        - Product Catalog
+      summary: Set product pricing
+      operationId: setProductPricing
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - basePrice
+                - pricingModel
+              properties:
+                basePrice:
+                  type: number
+                  format: double
+                discountAmount:
+                  type: number
+                  format: double
+                taxAmount:
+                  type: number
+                  format: double
+                pricingModel:
+                  type: string
+                  enum: [FIXED, USAGE_BASED, TIERED, SUBSCRIPTION]
+                currencyCode:
+                  type: string
+                  default: IDR
+                effectiveStart:
+                  type: string
+                  format: date-time
+                effectiveEnd:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Pricing created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pricing'
+
+  /products/{productId}/quota:
+    get:
+      tags:
+        - Product Catalog
+      summary: Get product quota
+      operationId: getProductQuota
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product quota
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Quota'
+
+    post:
+      tags:
+        - Product Catalog
+      summary: Set product quota
+      operationId: setProductQuota
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quotaType
+              properties:
+                quotaType:
+                  type: string
+                  enum: [DATA, VOICE, SMS, CONTENT]
+                quotaValue:
+                  type: number
+                  format: double
+                unit:
+                  type: string
+                rollover:
+                  type: boolean
+                unlimited:
+                  type: boolean
+                fairUsagePolicy:
+                  type: boolean
+      responses:
+        '201':
+          description: Quota set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quota'
+
+  /packages:
+    get:
+      tags:
+        - Product Catalog
+      summary: List all packages
+      operationId: listPackages
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: productId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of packages
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Package'
+
+    post:
+      tags:
+        - Product Catalog
+      summary: Create a new package
+      operationId: createPackage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - packageCode
+                - packageName
+              properties:
+                productId:
+                  type: string
+                  format: uuid
+                packageCode:
+                  type: string
+                packageName:
+                  type: string
+                packageType:
+                  type: string
+                  enum: [PREPAID, POSTPAID, FIXED, HYBRID]
+                validityDays:
+                  type: integer
+                renewable:
+                  type: boolean
+                autoRenew:
+                  type: boolean
+      responses:
+        '201':
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Package'
+
+  /bundles:
+    get:
+      tags:
+        - Product Catalog
+      summary: List all bundles
+      operationId: listBundles
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: bundleType
+          in: query
+          schema:
+            type: string
+            enum: [DATA_VOICE, TRIPLE_PLAY, FAMILY, CONVERGENCE, CUSTOM]
+      responses:
+        '200':
+          description: List of bundles
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Bundle'
+
+    post:
+      tags:
+        - Product Catalog
+      summary: Create a new bundle
+      operationId: createBundle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - bundleCode
+                - bundleName
+              properties:
+                bundleCode:
+                  type: string
+                bundleName:
+                  type: string
+                description:
+                  type: string
+                bundleType:
+                  type: string
+                  enum: [DATA_VOICE, TRIPLE_PLAY, FAMILY, CONVERGENCE, CUSTOM]
+                effectiveStart:
+                  type: string
+                  format: date-time
+                effectiveEnd:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Bundle created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bundle'
+
+  # ─── CAMPAIGN & PROMO ENDPOINTS ────────────────────────────
+  /campaigns:
+    get:
+      tags:
+        - Campaign & Promo
+      summary: List all campaigns
+      operationId: listCampaigns
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Draft, Active, Suspended, Completed, Archived]
+        - name: campaignType
+          in: query
+          schema:
+            type: string
+            enum: [Acquisition, Retention, Upsell, CrossSell, Loyalty, Seasonal]
+      responses:
+        '200':
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Campaign'
+
+    post:
+      tags:
+        - Campaign & Promo
+      summary: Create a new campaign
+      operationId: createCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - campaignCode
+                - campaignName
+                - campaignType
+                - startDate
+                - endDate
+              properties:
+                campaignCode:
+                  type: string
+                campaignName:
+                  type: string
+                description:
+                  type: string
+                campaignType:
+                  type: string
+                  enum: [Acquisition, Retention, Upsell, CrossSell, Loyalty, Seasonal]
+                objective:
+                  type: string
+                budgetAmount:
+                  type: number
+                  format: double
+                currencyCode:
+                  type: string
+                  default: IDR
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+                priorityLevel:
+                  type: integer
+                  default: 1
+                ownerTeam:
+                  type: string
+      responses:
+        '201':
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+
+  /campaigns/{campaignId}:
+    get:
+      tags:
+        - Campaign & Promo
+      summary: Get campaign details
+      operationId: getCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Campaign details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+
+    put:
+      tags:
+        - Campaign & Promo
+      summary: Update campaign
+      operationId: updateCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                campaignName:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum: [Draft, Active, Suspended, Completed, Archived]
+                budgetAmount:
+                  type: number
+                  format: double
+                priorityLevel:
+                  type: integer
+      responses:
+        '200':
+          description: Campaign updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+
+  /promos:
+    get:
+      tags:
+        - Campaign & Promo
+      summary: List all promos
+      operationId: listPromos
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: campaignId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Draft, Active, Suspended, Completed, Archived]
+      responses:
+        '200':
+          description: List of promos
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Promo'
+
+    post:
+      tags:
+        - Campaign & Promo
+      summary: Create a new promo
+      operationId: createPromo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - promoCode
+                - promoName
+                - promoType
+              properties:
+                campaignId:
+                  type: string
+                  format: uuid
+                promoCode:
+                  type: string
+                promoName:
+                  type: string
+                description:
+                  type: string
+                promoType:
+                  type: string
+                  enum: [Discount, Cashback, BOGO, Bundle, FreeShipping, RewardPoints]
+                benefitType:
+                  type: string
+                benefitValue:
+                  type: number
+                  format: double
+                maxDiscountAmount:
+                  type: number
+                  format: double
+                currencyCode:
+                  type: string
+                  default: IDR
+                stackingAllowed:
+                  type: boolean
+                exclusiveFlag:
+                  type: boolean
+                approvalRequired:
+                  type: boolean
+                autoApply:
+                  type: boolean
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Promo created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Promo'
+
+  /coupons:
+    get:
+      tags:
+        - Campaign & Promo
+      summary: List coupons
+      operationId: listCoupons
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: promoId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Active, Used, Expired, Revoked]
+      responses:
+        '200':
+          description: List of coupons
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Coupon'
+
+    post:
+      tags:
+        - Campaign & Promo
+      summary: Generate coupons
+      operationId: generateCoupons
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - promoId
+                - quantity
+              properties:
+                promoId:
+                  type: string
+                  format: uuid
+                quantity:
+                  type: integer
+                  minimum: 1
+                customerId:
+                  type: string
+                  format: uuid
+                issuedChannel:
+                  type: string
+      responses:
+        '201':
+          description: Coupons generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  coupons:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Coupon'
+                  quantity:
+                    type: integer
+
+  /coupons/{couponCode}/redeem:
+    post:
+      tags:
+        - Campaign & Promo
+      summary: Redeem coupon
+      operationId: redeemCoupon
+      parameters:
+        - name: couponCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerId
+              properties:
+                customerId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  format: double
+      responses:
+        '200':
+          description: Coupon redeemed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  couponCode:
+                    type: string
+                  discountAmount:
+                    type: number
+                    format: double
+                  message:
+                    type: string
+        '400':
+          description: Invalid coupon or already used
+        '404':
+          description: Coupon not found
+
+  # ─── LOYALTY ENDPOINTS ────────────────────────────────────
+  /members:
+    get:
+      tags:
+        - Loyalty & Rewards
+      summary: List loyalty members
+      operationId: listMembers
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, SUSPENDED, TERMINATED]
+        - name: tierCode
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of members
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Member'
+
+    post:
+      tags:
+        - Loyalty & Rewards
+      summary: Enroll new member
+      operationId: enrollMember
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - memberCode
+                - customerId
+              properties:
+                memberCode:
+                  type: string
+                customerId:
+                  type: string
+                  format: uuid
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                birthDate:
+                  type: string
+                  format: date
+                gender:
+                  type: string
+                  enum: [M, F, OTHER]
+      responses:
+        '201':
+          description: Member enrolled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+
+  /members/{memberId}:
+    get:
+      tags:
+        - Loyalty & Rewards
+      summary: Get member details
+      operationId: getMember
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Member details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+
+  /members/{memberId}/points:
+    get:
+      tags:
+        - Loyalty & Rewards
+      summary: Get member loyalty points
+      operationId: getMemberPoints
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Member points details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalPoints:
+                    type: number
+                    format: double
+                  availablePoints:
+                    type: number
+                    format: double
+                  redeemedPoints:
+                    type: number
+                    format: double
+                  lifetimePoints:
+                    type: number
+                    format: double
+                  pendingPoints:
+                    type: number
+                    format: double
+
+    post:
+      tags:
+        - Loyalty & Rewards
+      summary: Add points to member
+      operationId: addMemberPoints
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - points
+                - transactionType
+              properties:
+                points:
+                  type: number
+                  format: double
+                transactionType:
+                  type: string
+                  enum: [EARN, BONUS, ADJUSTMENT, TRANSFER]
+                transactionSource:
+                  type: string
+                referenceId:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '200':
+          description: Points added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  memberId:
+                    type: string
+                    format: uuid
+                  pointsAdded:
+                    type: number
+                    format: double
+                  newBalance:
+                    type: number
+                    format: double
+                  transactionId:
+                    type: string
+                    format: uuid
+
+  /members/{memberId}/ledger:
+    get:
+      tags:
+        - Loyalty & Rewards
+      summary: Get member point ledger
+      operationId: getMemberPointLedger
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: transactionType
+          in: query
+          schema:
+            type: string
+            enum: [EARN, REDEEM, ADJUSTMENT, BONUS, EXPIRY, REVERSAL, TRANSFER]
+      responses:
+        '200':
+          description: Point ledger
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PointLedger'
+
+  /members/{memberId}/rewards:
+    get:
+      tags:
+        - Loyalty & Rewards
+      summary: Get available rewards for member
+      operationId: getAvailableRewards
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Available rewards
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Reward'
+
+  /members/{memberId}/redeem:
+    post:
+      tags:
+        - Loyalty & Rewards
+      summary: Redeem reward
+      operationId: redeemReward
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rewardId
+              properties:
+                rewardId:
+                  type: string
+                  format: uuid
+                quantity:
+                  type: integer
+                  default: 1
+                redemptionChannel:
+                  type: string
+                deliveryAddress:
+                  type: string
+                remarks:
+                  type: string
+      responses:
+        '201':
+          description: Reward redeemed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Redemption'
+        '400':
+          description: Insufficient points or invalid reward
+
+  /members/{memberId}/tier-history:
+    get:
+      tags:
+        - Loyalty & Rewards
+      summary: Get member tier history
+      operationId: getMemberTierHistory
+      parameters:
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Tier history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tierId:
+                          type: string
+                          format: uuid
+                        tierName:
+                          type: string
+                        effectiveDate:
+                          type: string
+                          format: date-time
+                        expiryDate:
+                          type: string
+                          format: date-time
+                        changeReason:
+                          type: string
+
+  /tiers:
+    get:
+      tags:
+        - Loyalty & Rewards
+      summary: List all loyalty tiers
+      operationId: listTiers
+      responses:
+        '200':
+          description: List of tiers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tier'
+
+  /rewards:
+    get:
+      tags:
+        - Loyalty & Rewards
+      summary: List all rewards
+      operationId: listRewards
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, RETIRED]
+      responses:
+        '200':
+          description: List of rewards
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Reward'
+
+  # ─── ANALYTICS ENDPOINTS ────────────────────────────────
+  /analytics/customer-features:
+    get:
+      tags:
+        - Analytics
+      summary: Get customer features
+      operationId: getCustomerFeatures
+      parameters:
+        - name: customerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: snapshotDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Customer features
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CustomerFeatures'
+
+  /analytics/churn-risk:
+    get:
+      tags:
+        - Analytics
+      summary: Get churn risk analysis
+      operationId: getChurnRisk
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: riskLevel
+          in: query
+          schema:
+            type: string
+            enum: [LOW, MEDIUM, HIGH, CRITICAL]
+      responses:
+        '200':
+          description: Churn risk analysis
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChurnFeatures'
+
+  /analytics/fraud-detection:
+    get:
+      tags:
+        - Analytics
+      summary: Get fraud detection results
+      operationId: getFraudDetection
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: fraudLabel
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Fraud detection results
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FraudFeatures'
+
+  /analytics/recommendations:
+    get:
+      tags:
+        - Analytics
+      summary: Get product recommendations
+      operationId: getRecommendations
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Product recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customerId:
+                    type: string
+                    format: uuid
+                  recommendations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        productId:
+                          type: string
+                          format: uuid
+                        productName:
+                          type: string
+                        score:
+                          type: number
+                          format: double
+                        reason:
+                          type: string
